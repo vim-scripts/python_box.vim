@@ -1,0 +1,33 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=505
+
+Parts of this script (as indicated in the code) were taken from python.vim,
+copyright 2001 Mikael Berthe <mikael.berthe@efrei.fr>.
+
+The script brings together shortcuts and a menu to syntax check 
+the current file (using the compilerscript for python, python.vim),
+some functionality for quickly finding one's way through classes 
+and functions of a python file (without using exuberant ctags),
+some of the nice functionality from Mikael Berthe's python.vim
+as well as menu access to some of Benji Fisher's python_match.vim.
+
+---------------------------------------------------------------------------
+Some hints on how to use
+---------------------------------------------------------------------------
+The buffer TOC offers a outline of all Python classes and functions of the
+current buffer in a seperate vim window. The cursor position in the TOC window
+indicates where you are in the original Window containing the Python code. 
+Press <F5> again (or q) to quit that window without changing the cursor 
+position in the original window (containing the Python code).
+That I find practical when editing a Python file and getting confused 
+about where I am.
+If you want to change your position in the Python file:
+Set the cursor in the TOC window to the class/function you want to jump to 
+then press <RETURN> to go there.
+If the TOC windows is split pressing <SPACE> will navigate to the
+class/function but the TOC window will remain open and will keep the focus.
+Doubleclicking the left mousebutton will have the same effect.
+However if the window is not split left doublclicking or pressing <SPACE>
+will have the same effect as pressing <RETURN>.
+Once the TOC-window looses its focus it is closed immediately so to be out of
+the way.
+
