@@ -1,8 +1,8 @@
 " Vim plugin for the Python programming language
 " FILE: python_box.vim
-" LAST MODIFICATION: 2002 Nov 30
+" LAST MODIFICATION: 2003 Feb 1
 " Maintainer: Christoph Herzog <ccf.herzog@gmx.net>
-" Version: 0.4
+" Version: 0.5
 "
 " Parts of this script (as indicated in the code) were taken from python.vim,
 " copyright 2001 Mikael Berthe <mikael.berthe@efrei.fr>.
@@ -136,6 +136,7 @@ let g:outlineWinSplitMode	= "nosplit"		"default
 let g:outlinedBufferName  	= ""			"set by function StartOutline
 let g:outlinedBufferFType 	= ""			"set by function StartOutline
 let g:CursorPositionInTOC   = 0             "set by function s:SetOutline
+let g:outlineTempHidden     = 0             "hack to avoid problems with splitting
 
 "Start Outline
 function! StartOutline(splitmode)
@@ -150,7 +151,6 @@ function! StartOutline(splitmode)
 	let g:outlineWinSplitMode = a:splitmode
 	let g:outlinedBufferName = bufname("%")
 	let g:outlinedBufferFType = &filetype
-	"call function according to filetype
 	let ft = g:outlinedBufferFType
 	if ft == "python"
 		let regexp = "\\m\\C\^\\s*class\\s\\+[a-zA-Z0-9_]\\+\\\|\^\\s*def\\s\\+[a-zA-Z0-9_]\\+"
@@ -162,20 +162,21 @@ function! StartOutline(splitmode)
 endfunction
 
 
-"This immediately hides buffer, when changing to other window
+"This immediately closes buffer, when changing to other window
 autocmd WinLeave * call CloseOutline()
+autocmd BufHidden * call CloseOutline()
 function! CloseOutline()
-	if bufwinnr(g:outlineBufferNumber) != -1 && bufnr("%") == g:outlineBufferNumber
-		hide
+	if bufwinnr(g:outlineBufferNumber) != -1 && bufnr("%") == g:outlineBufferNumber && g:outlineTempHidden == 0
+      let g:outlineBufferNumber = -1
+	  bw   
 	endif
 endfunction
 
 
-"unload Outline buffer, set buffer number to -1:
+"close Outline buffer, set buffer number to -1:
 function! QuitOutlineBuffer()
-	"bw!
-    bun!
 	let g:outlineBufferNumber = -1
+    bw
 endfunction
 
 
@@ -214,6 +215,7 @@ function! MakeOutlineWindow(outlinelist)
 		setlocal modifiable
 		setlocal noswapfile
 		setlocal buftype=nowrite
+        setlocal bufhidden=delete
 		setlocal nowrap
 		"empty buffer:
 		normal gg
@@ -225,6 +227,16 @@ function! MakeOutlineWindow(outlinelist)
 	setlocal nomodified
     exec "normal " . g:CursorPositionInTOC . "G"
 	call DefineOutlineNavigationMaps()
+    "some highlighting
+    if has("syntax") && exists("g:syntax_on") && !has("syntax_items")
+      syn keyword pyStatement	def class nextgroup=pyFunction skipwhite
+      syn match   pyFunction	"[a-zA-Z_][a-zA-Z0-9_]*" contained
+      syn match   pyComment	    "#.*$"
+
+      hi def link pyComment       Comment
+      hi def link pyFunction      Function
+      hi def link pyStatement     Statement
+    endif
 endfunction
 
 function! NavigateToOutlineTag(navmode)
@@ -243,37 +255,43 @@ function! NavigateToOutlineTag(navmode)
 	"arrange buffers/windows, go to targetline
 	let is_split = g:outlineWinSplitMode
 	if a:navmode     == 0 && is_split == "nosplit"
+        call QuitOutlineBuffer()
 		exec ":b " . mybuffer
 		exec ":". targetline
 		normal zt
 	elseif a:navmode == 0 && is_split == "horizontal"
-		hide
+        call QuitOutlineBuffer()
 		exec ":b " . mybuffer
 		exec ":". targetline
 		normal zt
 	elseif a:navmode == 0 && is_split == "vertical"
-		hide
+        call QuitOutlineBuffer()	
 		exec ":b " . mybuffer
 		exec ":". targetline
 		normal zt
 	elseif a:navmode == 1 && is_split == "nosplit"
+        call QuitOutlineBuffer()
 		exec ":b " . mybuffer
 		exec ":". targetline		
 		normal zt
 	elseif a:navmode == 1 && is_split == "horizontal"
-		hide
+        let g:outlineTempHidden = 1
+        hide
 		exec ":b " . mybuffer
 		exec ":". targetline
 		normal zt
 		split
 		exec ":b " . g:outlineBufferNumber
+        let g:outlineTempHidden = 0
 	elseif a:navmode == 1 && is_split == "vertical"
+        let g:outlineTempHidden = 1      
 		hide
-		exec ":b " . mybuffer
+        exec ":b " . mybuffer
 		exec ":". targetline
 		normal zt
 		vsplit
-		exec ":b " . g:outlineBufferNumber		
+		exec ":b " . g:outlineBufferNumber
+        let g:outlineTempHidden = 0
 	endif
 endfunction
 
